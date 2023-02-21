@@ -1,12 +1,9 @@
 from django.db.models import Q
-from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.parsers import JSONParser
-from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
 from .serializers import *
-from rest_framework.decorators import api_view, renderer_classes, parser_classes
+from rest_framework.decorators import api_view
 from django.http.response import JsonResponse
 import datetime
 
@@ -52,37 +49,45 @@ def create_shop(request):
     if request.method == 'POST':
         shop_serializer = ShopsSerializer(data=request.data)
         if shop_serializer.is_valid():
+            # try:
             shop_serializer.save()
+            # except Exception as e:
+            #     print("An exception occurred while saving the store")
+            #     print(e)
+            #     return Response(e, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             return Response(shop_serializer.data, status=status.HTTP_201_CREATED)
         return Response(shop_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     elif request.method == 'GET':
+        print("Get shop request with parameters:")
         var_street_id = request.query_params.get('street')
         var_city_id = request.query_params.get('city')
         var_open = request.query_params.get('open')
         all_shops = Shops.objects.all()
         if var_city_id is not None and var_city_id.isdigit():
+            print("Set city_id:")
+            print(var_city_id)
             streets = Street.objects.filter(city_id=var_city_id)
             streets_id_list = [streets.id for streets in streets]
             all_shops = all_shops.filter(street_id__in=streets_id_list)
 
         if var_street_id is not None and var_street_id.isdigit():
+            print("Set street_id:")
+            print(var_street_id)
             all_shops = all_shops.filter(street_id=var_street_id)
 
         if var_open is not None and var_open.isdigit():
-            now = datetime.datetime.now().hour
-            print('vremya')
-            print(now)
-            print('varopen')
+            print("Set open:")
             print(var_open)
-            if var_open == 0:
-                all_shops = all_shops.filter(Q(open_time__qt=now) or Q(close_time__lt=now))
-            elif var_open == 1:
-                all_shops = all_shops.filter(Q(open_time__lt=now) and Q(close_time__qt=now))
-
+            now = datetime.datetime.now().hour
+            print('Time now:')
+            print(now)
+            # Описание __lt __gt
+            # https://stackoverflow.com/questions/64309821/difference-between-the-lte-and-gte-in-django
+            if int(var_open) == 0:
+                all_shops = all_shops.filter(Q(open_time__gt=now) | Q(close_time__lte=now))
+            elif int(var_open) == 1:
+                all_shops = all_shops.filter(open_time__lte=now, close_time__gt=now)
 
         shops_s = ShopsSerializer(all_shops, many=True)
         return JsonResponse(shops_s.data, safe=False)
-
-        # if var_street_id is not None and var_street_id.isdigit():
-        #     street
