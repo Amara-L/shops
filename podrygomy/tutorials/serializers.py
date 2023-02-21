@@ -14,11 +14,38 @@ class CitySerializer(serializers.ModelSerializer):
 
 
 class StreetSerializer(serializers.ModelSerializer):
+    city_id = serializers.CharField(source='city_id.name')
     class Meta:
         model = Street
         fields = ('id',
                   'name',
                   'city_id',)
+
+    def create(self, validated_data):
+        print("Start creating Street object")
+
+        # Извлекаем полученные данные для города
+        print('City data:')
+        city_data = validated_data.pop('city_id')
+        print(city_data)
+
+        # Ищем в базе по названию
+        city = City.objects.filter(name=city_data.get("name"))
+
+        # Если в базе такого объекта нет - создаем
+        if not city:
+            print("City by name " + city_data.get("name") + " not found in data base. Start creating")
+            City.objects.get_or_create(**city_data)
+
+        # Получаем объект из базы
+        print('Object data City from table:')
+        city = get_object_or_404(City, name=city_data.get("name"))
+        print(city)
+
+        print('Object Street:')
+        street = Street.objects.create(city_id=city, **validated_data)
+        print(street)
+        return street
 
 
 class ShopsSerializer(serializers.ModelSerializer):
@@ -34,7 +61,8 @@ class ShopsSerializer(serializers.ModelSerializer):
 
     # Флаг открытия/закрытия магазина
     # Значение определяется в методе set_open
-    # Так же можно указать определение в модели: https://stackoverflow.com/questions/24233988/django-serializer-method-field
+    # Так же можно указать определение в модели:
+    # https://stackoverflow.com/questions/24233988/django-serializer-method-field
     open = serializers.SerializerMethodField('set_open', read_only=True)
 
     class Meta:
