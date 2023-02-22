@@ -11,9 +11,8 @@ then
     echo "PostgreSQL started"
 fi
 
-pwd
-ls -1 -d */
-tree -dfi
+cd podrygomy
+source ../venv/Scripts/activate
 python manage.py flush --no-input
 python manage.py migrate
 

@@ -12,11 +12,11 @@ RUN apk update \
     && apk add postgresql-dev gcc python3-dev musl-dev
 # install dependencies
 RUN pip install --upgrade pip
-COPY ./requirements.txt .
+COPY ./docker/requirements.txt .
 RUN pip install -r requirements.txt
 # copy entrypoint.sh
-COPY /entrypoint.sh .
+COPY /docker/entrypoint.sh .
 # copy project
-COPY podrygomy .
+COPY . .
 # run entrypoint.sh
 ENTRYPOINT ["/shop/podrygomy/entrypoint.sh"]
