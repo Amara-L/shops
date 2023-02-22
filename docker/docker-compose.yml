@@ -1,0 +1,32 @@
+version: '3.7'
+
+services:
+  web:
+    networks:
+      - shop-local-network
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./:/shop/podrygomy
+    ports:
+      - 8000:8000
+    env_file:
+      - ./.env.dev
+    depends_on:
+      - db
+  db:
+    networks:
+      - shop-local-network
+    image: postgres:12.0-alpine
+    volumes:
+      - postgres_data:/var/lib/shop/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=shop
+volumes:
+  postgres_data:
+
+networks:
+  shop-local-network:
+    driver: bridge
