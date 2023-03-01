@@ -4,6 +4,9 @@ from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 
 from .models import *
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class CitySerializer(serializers.ModelSerializer):
@@ -15,6 +18,7 @@ class CitySerializer(serializers.ModelSerializer):
 
 class StreetSerializer(serializers.ModelSerializer):
     city_id = serializers.CharField(source='city_id.name')
+
     class Meta:
         model = Street
         fields = ('id',
@@ -22,29 +26,25 @@ class StreetSerializer(serializers.ModelSerializer):
                   'city_id',)
 
     def create(self, validated_data):
-        print("Start creating Street object")
+        _logger.debug("Start creating Street object")
 
         # Извлекаем полученные данные для города
-        print('City data:')
         city_data = validated_data.pop('city_id')
-        print(city_data)
+        _logger.debug("City data: %s", city_data)
 
         # Ищем в базе по названию
         city = City.objects.filter(name=city_data.get("name"))
 
         # Если в базе такого объекта нет - создаем
         if not city:
-            print("City by name " + city_data.get("name") + " not found in data base. Start creating")
+            _logger.debug("City by name %s not found in data base. Start creating", city_data.get("name"))
             City.objects.get_or_create(**city_data)
 
         # Получаем объект из базы
-        print('Object data City from table:')
         city = get_object_or_404(City, name=city_data.get("name"))
-        print(city)
+        _logger.debug("Object data City from table: %s", city)
 
-        print('Object Street:')
         street = Street.objects.create(city_id=city, **validated_data)
-        print(street)
         return street
 
 
@@ -84,67 +84,55 @@ class ShopsSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        print("Start creating Shop object")
+        _logger.debug("Start creating Shop object")
 
         # Извлекаем полученные данные для города
-        print('City data:')
         city_data = validated_data.pop('city')
-        print(city_data)
-        print('Add to dict:')
+        _logger.debug("City data: %s", city_data)
         city_data = dict.fromkeys({'name'}, city_data)
-        print(city_data)
+        _logger.debug("Added to dict: %s", city_data)
 
         # Ищем в базе по названию
         city = City.objects.filter(name=city_data.get("name"))
 
         # Если в базе такого объекта нет - создаем
         if not city:
-            print("City by name " + city_data.get("name") + " not found in data base. Start creating")
+            _logger.debug("City by name %s not found in data base. Start creating", city_data.get("name"))
             City.objects.get_or_create(**city_data)
 
         # Получаем объект из базы
-        print('Object data City from table:')
         city = get_object_or_404(City, name=city_data.get("name"))
-        print(city)
+        _logger.debug("Object data City from table: %s", city)
 
         # Извлекаем полученные данные для улицы
-        print('Street data:')
         street_data = validated_data.pop('street_id')
-        print(street_data)
+        _logger.debug("Street data: %s", street_data)
 
         # Ищем в базе по названию и идентификатору города
         street = Street.objects.filter(name=street_data.get("name"), city_id=city.id)
-        print('Object data Street from table:')
-        print(street)
+        _logger.debug("Object data Street from table: %s", street)
 
         # Если в базе такого объекта нет - создаем
         if not street:
-            print("Street by name " + street_data.get("name") + " and city_id "
-                  + str(city.id) + " not found in data base. Start creating. \nStreet data before add city_id:")
-            print(street_data)
+            _logger.debug("Street by name %s and city_id %s not found in data base. Start creating. "
+                          + "\nStreet data before add city_id: %s",
+                          street_data.get("name"), str(city.id), street_data)
             street_data['city_id'] = city
-            print("Street data after add city_id:")
-            print(street_data)
             Street.objects.get_or_create(**street_data)
 
         # Получаем объект из базы
-        print('Object data Street from table:')
         street = get_object_or_404(Street, name=street_data.get("name"), city_id=city.id)
-        print(street)
 
-        print('Object Shop:')
         shop = Shops.objects.create(street_id=street, **validated_data)
-        print(shop)
         return shop
 
     # # Метод определят значение для флага open
-    def set_open(self, obj):
+    @staticmethod
+    def set_open(obj):
         open_time = obj.open_time
         close_time = obj.close_time
         now = datetime.datetime.now().hour
-        open = 0
         if int(open_time) <= now < int(close_time):
-            open = 1
+            return 1
         else:
-            open = 0
-        return open
+            return 0

@@ -25,7 +25,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", 'django-insecure-_22oblr38hns^%@(o01ni
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", '').split(" ")
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", 'localhost 127.0.0.1 [::1]').split(" ")
 
 
 # Application definition
@@ -74,18 +74,30 @@ WSGI_APPLICATION = 'podrygomy.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
+def get_env_database_name():
+    value = os.environ.get("SQL_DATABASE")
+    if value is None:
+        if os.environ.get("SQL_PORT") is None:
+            return "shop"
+        else:
+            return os.path.join(BASE_DIR, "shop")
+    else:
+        return value
+
 
 DATABASES = {
     "default": {
         "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.postgresql"),
-        "NAME": os.environ.get("SQL_DATABASE", os.path.join(BASE_DIR, "shop")),
+        # "NAME": os.environ.get("SQL_DATABASE", "shop"),
+
+        "NAME": get_env_database_name(),
+        # "NAME": os.environ.get("SQL_DATABASE", os.path.join(BASE_DIR, "shop")),
         "USER": os.environ.get("SQL_USER", "postgres"),
         "PASSWORD": os.environ.get("SQL_PASSWORD", "postgres"),
         "HOST": os.environ.get("SQL_HOST", "localhost"),
-        "PORT": os.environ.get("SQL_PORT", "5432"),
+        "PORT": os.environ.get("SQL_PORT", "15432"),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -132,3 +144,28 @@ CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:8081',
 )
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+}
