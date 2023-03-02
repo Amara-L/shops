@@ -56,8 +56,8 @@ class ShopsSerializer(serializers.ModelSerializer):
     city_name = serializers.CharField(source='street_id.city_id.name', read_only=True)
     # Указываем поля только для записи (при получении json объекта они отображаться не должны)
     city = serializers.CharField(write_only=True)
-    open_time = serializers.IntegerField(write_only=True)
-    close_time = serializers.IntegerField(write_only=True)
+    open_time = serializers.TimeField(write_only=True)
+    close_time = serializers.TimeField(write_only=True)
 
     # Флаг открытия/закрытия магазина
     # Значение определяется в методе set_open
@@ -131,8 +131,8 @@ class ShopsSerializer(serializers.ModelSerializer):
     def set_open(obj):
         open_time = obj.open_time
         close_time = obj.close_time
-        now = datetime.datetime.now().hour
-        if int(open_time) <= now < int(close_time):
+        now = datetime.datetime.now().time()
+        if open_time < now < close_time:
             return 1
         else:
             return 0
