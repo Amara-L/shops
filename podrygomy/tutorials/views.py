@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from django.db.models import Q
 from rest_framework import status
 from rest_framework.response import Response
@@ -52,7 +53,12 @@ def streets_by_city_id(request):
         street_serializer = StreetSerializer(data=request.data)
         if street_serializer.is_valid():
             _logger.debug("The received data is valid. The street start saving")
-            street_serializer.save()
+            try:
+                street_serializer.save()
+            except IntegrityError as e:
+                _logger.warning("The object Street with this name and city already exist. 400 response is returned")
+                return Response("The object Street with this name and city already exist.",
+                                status=status.HTTP_400_BAD_REQUEST)
             return Response(street_serializer.data, status=status.HTTP_201_CREATED)
         _logger.warning("The received data is not valid. 400 response is returned")
         return Response(street_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -65,7 +71,11 @@ def create_shop(request):
         shop_serializer = ShopsSerializer(data=request.data)
         if shop_serializer.is_valid():
             _logger.debug("The received data is valid. The shop start saving")
-            shop_serializer.save()
+            try:
+                shop_serializer.save()
+            except IntegrityError as e:
+                _logger.warning("The object Shop with this name and address already exist. 400 response is returned")
+                return Response("The object Shop with this name and address already exist.", status=status.HTTP_400_BAD_REQUEST)
             return Response(shop_serializer.data, status=status.HTTP_201_CREATED)
         _logger.warning("The received data is not valid. 400 response is returned")
         return Response(shop_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -88,8 +98,8 @@ def create_shop(request):
 
         if var_open is not None and var_open.isdigit():
             _logger.info("Set open: %s", var_open)
-            now = datetime.datetime.now().hour
-            _logger.info("Time now: %s h", now)
+            now = datetime.datetime.now().time()
+            _logger.info("Time now: %s", now)
             # Описание __lt __gt
             # https://stackoverflow.com/questions/64309821/difference-between-the-lte-and-gte-in-django
             if int(var_open) == 0:
