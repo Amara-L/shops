@@ -132,7 +132,7 @@ class ShopsSerializer(serializers.ModelSerializer):
         open_time = obj.open_time
         close_time = obj.close_time
         now = datetime.datetime.now().time()
-        if open_time < now < close_time:
+        if open_time <= now < close_time:
             return 1
         else:
             return 0
